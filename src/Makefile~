@@ -1,18 +1,26 @@
-.PHONY: clean
-
-#Declaration Constantes
 CC = gcc
-CFLAGS = -w -Wall
-LDFLAGS = -s
+LD = gcc
+CFLAGS = -Wall -W -Werror
+LDFLAGS =
+EXE = pawnee
+HEADERS = $(wildcard *.h)
+CFILES = $(wildcard *.c)
+OBJS = $(CFILES: .c=.o)
 
-#EXECUTABLE
-../server.exe: %.o
-	$(CC) $(LDFLAGS) -o $@ $^
+.PHONY: all clean mrproper
 
-#COMPILATION GENERIQUE
-%.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $^
+all: $(EXE)
 
+$(EXE): $(OBJS)
+	$(LD) $^ $(LDFLAGS) -o $@
 
-clean:
-	rm -f *.o
+Makefile.dep : $(CFILES) $(HEADERS)
+	$(CC) -MM $(CFILES) > $@
+
+clean :
+	$(RM) $(OBJS) Makefile.dep
+
+mrproper : clean
+	$(RM) $(EXE)
+
+include Makefile.dep
