@@ -5,12 +5,24 @@
 int main(int argc, char **argv) {
 	/* Arnold Robbins in the LJ of February ’95 , describing RCS */
 
-	int res = creer_serveur(8000);
+	int res = creer_serveur(8080);
 	if(res != -1){
 	
 		while(1){
 			accepter(res);
+
 			printf("success\n");
+
+			/*
+			int fils;
+			fils = fork();
+			if(fils == 0) {
+				while(read() != -1){
+					return write();
+				}
+			}
+			wait(fils);
+			*/
 		}
 		
 	} else {

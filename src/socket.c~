@@ -15,7 +15,7 @@ int accepter(int socket_serveur){
 	if(socket_client == -1){
 		perror("accept socket");
 	}
-	sleep(1000);
+	sleep(1);
 	const char *message_bienvenue = "Bonjour, bienvenue sur mon serveur\n";
 	return write(socket_client, message_bienvenue, strlen( message_bienvenue));
 }
