@@ -8,7 +8,7 @@
 #include <netinet/ip.h>
 #include <unistd.h>
 #include <pthread.h>
-
+/*
 int accepter(int socket_serveur){
 	int socket_client;
 	socket_client = accept(socket_serveur, NULL, NULL);
@@ -19,6 +19,7 @@ int accepter(int socket_serveur){
 	const char *message_bienvenue = "Bonjour, bienvenue sur notre serveur\nNous sommes tres heureux de vous recevoir\nJ'adore les sucettes, et les gros calins !\nJe suis Charlie\nC'est l'histoire d'un mec qui rentre dans un cafe, et PLOUF !\nTu connais la blague a deux balles ? PAN PAN !\nJ'ai envie de me suicider parce que c'est cool la mort....... ouais c'est trop cool\n";
 	return write(socket_client, message_bienvenue, strlen( message_bienvenue));
 }
+*/
 
 
 int ecouter(int socket_serveur){
@@ -35,6 +36,10 @@ int config_socket(int socket_serveur){
 	saddr.sin_family = AF_INET; /* Socket ipv4 */
 	saddr.sin_port = htons(8080); /* Port d ’ écoute */
 	saddr.sin_addr.s_addr = INADDR_ANY; /* écoute sur toutes les interfaces */
+	
+	int optval = 1;
+	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(int)) == -1)
+				perror ("Can not set SO_REUSEADDR option");
 
 	if(bind(socket_serveur, (struct sockaddr *)&saddr, sizeof(saddr)) == -1){
 		perror("bind socket");
