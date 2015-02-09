@@ -1,4 +1,8 @@
 #include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "socket.h"
 
@@ -9,22 +13,38 @@ int main(int argc, char **argv) {
 	if(res != -1){
 	
 		while(1){
-			accepter(res);
-
-			printf("success\n");
-
-			/*
+			int socket_client;
+			socket_client = accept(res, NULL, NULL);
+			printf("CONNEXION ACCEPTEE\n");
 			int fils;
 			fils = fork();
+
+			/* dans le fils */
 			if(fils == 0) {
-				while(read() != -1){
-					return write();
+				sleep(1);
+				const char *message_bienvenue = "Bonjour, bienvenue sur notre serveur\nNous sommes tres heureux de vous recevoir\nJ'adore les sucettes, et les gros calins !\nJe suis Charlie\nC'est l'histoire d'un mec qui rentre dans un cafe, et PLOUF !\nTu connais la blague a deux balles ? PAN PAN !\nJ'ai envie de me suicider parce que c'est cool la mort....... ouais c'est trop cool\nVive les lamasticots !!!\n";
+				write(socket_client, message_bienvenue, strlen(message_bienvenue));				
+				
+				while(1){
+						char* fd;
+						int taille;
+						taille = read(socket_client, &fd, strlen(fd));
+						if(taille != -1){
+							printf("message reçu :-D\n");					
+							write(socket_client, &fd, strlen(fd));
+							sleep(1);
+							printf("message envoyé\n");
+						} else{
+							printf("message pas reçu :-(\n");
+						}
+										
+					
 				}
+
+
+			/* dans le père */
 			}
-			wait(fils);
-			*/
 		}
-		
 	} else {
 		printf("fail\n");
 		return -1;

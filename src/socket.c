@@ -8,7 +8,7 @@
 #include <netinet/ip.h>
 #include <unistd.h>
 #include <pthread.h>
-
+/*
 int accepter(int socket_serveur){
 	int socket_client;
 	socket_client = accept(socket_serveur, NULL, NULL);
@@ -16,9 +16,10 @@ int accepter(int socket_serveur){
 		perror("accept socket");
 	}
 	sleep(1);
-	const char *message_bienvenue = "Bonjour, bienvenue sur mon serveur\n";
+	const char *message_bienvenue = "Bonjour, bienvenue sur notre serveur\nNous sommes tres heureux de vous recevoir\nJ'adore les sucettes, et les gros calins !\nJe suis Charlie\nC'est l'histoire d'un mec qui rentre dans un cafe, et PLOUF !\nTu connais la blague a deux balles ? PAN PAN !\nJ'ai envie de me suicider parce que c'est cool la mort....... ouais c'est trop cool\n";
 	return write(socket_client, message_bienvenue, strlen( message_bienvenue));
 }
+*/
 
 
 int ecouter(int socket_serveur){
