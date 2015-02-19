@@ -22,6 +22,30 @@ int accepter(int socket_serveur){
 }
 */
 
+/* serveur ---> client */
+void envoie_reponse(FILE * fclient, const char * phrase) {
+	fprintf(fclient, "<kiwi> %s\n", phrase);
+}
+
+/* client ---> serveur */
+char * recois_requete(char * buffer , int size , FILE * stream) {
+
+	/* Réinitialisation du buffer */
+	int i;
+	for(i = 0; i<size; ++i) {
+		buffer[i] = '\0';
+	}
+
+	fgets(buffer, size, stream); /* Lecture des donnees envoyees par le client */
+	fflush(stdout); /* Vider les buffers du flux */
+
+	/* Quitte si l'on envoie une donnee vide */
+	if(buffer[0] == '\0')
+		exit(1);
+
+	return buffer;
+}
+
 void traitement_signal(int sig){
 
 
