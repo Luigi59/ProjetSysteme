@@ -22,9 +22,30 @@ int accepter(int socket_serveur){
 }
 */
 
+void traitement_signal(int sig){
+
+
+	int statut;
+/*	printf("Signal %d reçu \n", sig);
+	if(waitpid(sig) == -1) {
+		perror("zombie");
+		return;
+	}
+	*/
+	if(sig==SIGCHLD)
+		while(waitpid(-1,&statut,WNOHANG)>0)
+			;
+
+}
+
 void initialiser_signaux(void){
-	if(signal(SIGPIPE, SIG_IGN) == SIG_ERR)
-		perror("signal");
+	struct sigaction sa;
+	sa.sa_handler = traitement_signal;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = SA_RESTART ;
+	if(sigaction(SIGCHLD, &sa, NULL) == -1){
+		perror("sigaction(SIGCHLD)");
+	}
 }
 
 int ecouter(int socket_serveur){
