@@ -2,7 +2,7 @@ CC = gcc
 LD = gcc
 CFLAGS = -Wall -W -Werror
 LDFLAGS =
-EXE = server.exe
+EXE = kiwi
 HEADERS = $(wildcard *.h)
 CFILES = $(wildcard *.c)
 OBJS = $(CFILES: .c=.o)
