@@ -1,0 +1,17 @@
+5.2.1 Manipulations préliminaires
+
+	2. Lancez la commande
+		$ curl http://localhost:8080/
+
+	3. Quel est le message envoyé par le client web?
+		<kiwi> GET / HTTP/1.1
+		<kiwi> User-Agent: curl/7.35.0
+		<kiwi> Host: localhost:8080
+		<kiwi> Accept: */*
+		<kiwi>
+
+	4. À l’aide de la RFC, trouvez le nom donné aux trois constituant de la 	première ligne de la requête envoyée par le client.
+
+		1 : méthode
+		2 : URI
+		3 : protocole

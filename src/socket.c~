@@ -22,9 +22,55 @@ int accepter(int socket_serveur){
 }
 */
 
+int premier_mot_GET(const char * buf) {
+	if(strncmp(buf, "GET ", 4) != 0)
+		return -1;
+	return 0;
+}
+
+int trois_mots(const char * buf) {
+	int nb_espace = 0;
+	int position_espace1 = 0;
+	int position_espace2;
+	int i;
+	for(i=0; i<strlen(buf); ++i) {
+		if(buf[i] == ' ') {
+			++nb_espace;
+			if(nb_espace > 2)
+				return -1
+			if(position_espace1 == 0)
+				position_espace1 = i;
+			else
+				position_espace2 = i;
+		}
+	}
+	if(position_espace2 - position_espace1 < 2)
+		return -1;
+	return 0;
+}
+
+int troisieme_mot_HTTP(const char * buf) {
+	int i = 0;
+	int nb_espace = 0;
+	while(nb_espace < 2){
+        	if(buf[i] == ' ')
+			++nb_espace;
+        	++i;
+	}
+	if(strncmp(&buf[i], "HTTP/1.1", 8) != 0 && strncmp(&buf[i], "HTTP/1.0", 8) != 0)
+		return -1;
+	return 0;
+}
+
+int analyse_premiere_ligne(const char * buf) {
+	if(buf[0] == ' ' || premier_mot_GET(buf)!=0 || trois_mots(buf)!=0 || troisieme_mot_HTTP(buf)!=0)
+		return -1;
+	return 0;
+}
+
 /* serveur ---> client */
 void envoie_reponse(FILE * fclient, const char * phrase) {
-	fprintf(fclient, "%s\n", phrase);
+	fprintf(fclient, "<kiwi> %s", phrase);
 }
 
 /* client ---> serveur */

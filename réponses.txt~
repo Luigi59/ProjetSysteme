@@ -1,0 +1,11 @@
+5.2.1 Manipulations préliminaires
+
+	2. Lancez la commande
+		$ curl http://localhost:8080/
+
+	3. Quel est le message envoyé par le client web?
+		<kiwi> GET / HTTP/1.1
+		<kiwi> User-Agent: curl/7.35.0
+		<kiwi> Host: localhost:8080
+		<kiwi> Accept: */*
+		<kiwi>
