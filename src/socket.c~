@@ -37,7 +37,7 @@ int trois_mots(const char * buf) {
 		if(buf[i] == ' ') {
 			++nb_espace;
 			if(nb_espace > 2)
-				return -1
+				return -1;
 			if(position_espace1 == 0)
 				position_espace1 = i;
 			else
@@ -83,6 +83,7 @@ char * recois_requete(char * buffer , int size , FILE * stream) {
 	}
 
 	fgets(buffer, size, stream); /* Lecture des donnees envoyees par le client */
+	printf("<kiwi> %s\n", buffer);
 	fflush(stdout); /* Vider les buffers du flux */
 
 	/* Quitte si l'on envoie une donnee vide */

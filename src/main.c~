@@ -37,7 +37,8 @@ int main(int argc, char **argv) {
 					while(recois_requete(buf, sizeof(buf)/sizeof(buf[0]), fclient)){
 						//printf("message reçu :-D\n");					
 						//envoie_reponse(fclient, buf);
-						printf("<kiwi> %s", buf);
+						int analyse_ligne1 = analyse_premiere_ligne(buf);
+						printf("résultat analyse premiere ligne : %d\n", analyse_ligne1);
 						sleep(1);
 						//printf("			message envoyé\n");
 					}

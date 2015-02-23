@@ -83,6 +83,7 @@ char * recois_requete(char * buffer , int size , FILE * stream) {
 	}
 
 	fgets(buffer, size, stream); /* Lecture des donnees envoyees par le client */
+	printf("<kiwi> %s", buffer);
 	fflush(stdout); /* Vider les buffers du flux */
 
 	/* Quitte si l'on envoie une donnee vide */
