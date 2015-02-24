@@ -2,6 +2,11 @@
 #define __SOCKET_H__
 
 //int accepter(int socket_serveur);
+int premier_mot_GET(const char * buf);
+int trois_mots(const char * buf);
+int troisieme_mot_HTTP(const char * buf);
+int analyse_premiere_ligne(const char * buf);
+void envoie_reponse(FILE * fclient, const char * phrase);
 char * recois_requete(char * buffer , int size , FILE * stream);
 void traitement_signal(int sig);
 void initialiser_signaux(void);

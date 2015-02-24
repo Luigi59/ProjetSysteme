@@ -22,6 +22,15 @@ int accepter(int socket_serveur){
 }
 */
 
+void ignore_entete(FILE * fclient) {
+	char * buf = malloc(256);
+	fgets(buf, 256, fclient);
+	while (strncmp(buf, "\r\n", 2) != 0 && strncmp(buf, "\n", 1) != 0) {
+		fflush(stdout); /* on vide le flux */
+        fgets(buf, 256, fclient);
+	}
+}
+
 int premier_mot_GET(const char * buf) {
 	if(strncmp(buf, "GET ", 4) != 0)
 		return -1;
