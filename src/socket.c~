@@ -9,18 +9,14 @@
 #include <pthread.h>
 #include <signal.h>
 
-/*
-int accepter(int socket_serveur){
-	int socket_client;
-	socket_client = accept(socket_serveur, NULL, NULL);
-	if(socket_client == -1){
-		perror("accept socket");
-	}
-	sleep(1);
-	const char *message_bienvenue = "Bonjour, bienvenue sur notre serveur\nNous sommes tres heureux de vous recevoir\nJ'adore les sucettes, et les gros calins !\nJe suis Charlie\nC'est l'histoire d'un mec qui rentre dans un cafe, et PLOUF !\nTu connais la blague a deux balles ? PAN PAN !\nJ'ai envie de me suicider parce que c'est cool la mort....... ouais c'est trop cool\n";
-	return write(socket_client, message_bienvenue, strlen( message_bienvenue));
-}
-*/
+const char *message_bienvenue = "\n<kiwi> Bonjour, bienvenue sur notre serveur\n<kiwi> Nous sommes tres heureux de vous recevoir\n<kiwi> J'adore les sucettes, et les gros calins !\n<kiwi> Je suis Charlie\n<kiwi> C'est l'histoire d'un mec qui rentre dans un cafe, et PLOUF !\n<kiwi> Tu connais la blague a deux balles ? PAN PAN !\n<kiwi> J'ai envie de me suicider parce que c'est cool la mort....... ouais c'est trop cool\n<kiwi> Vive les lamasticots !!!\n\n";
+
+int socket_client;
+int fils;
+int taille;
+FILE * fclient;
+int analyse_ligne1;
+
 
 void ignore_entete(FILE * fclient) {
 	char * buf = malloc(256);
@@ -122,9 +118,9 @@ void traitement_signal(int sig){
 	if(sig==SIGCHLD)
 		while(waitpid(-1,&statut,WNOHANG)>0)
 		{
-			if (WIFSIGNALED(status))
+			if (WIFSIGNALED(statut))
 			{
-				printf("Terminé par sigal %d\n", WTERMSIG(status));
+				printf("Terminé par sigal %d\n", WTERMSIG(statut));
 			}
 		}
 
@@ -172,4 +168,54 @@ int creer_serveur(int port){
 	if (setsockopt(socket_serveur, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(int)) == -1)
 		perror ("Can not set SO_REUSEADDR option");
 	return config_socket(socket_serveur); 	
+}
+
+
+void accept_client(int socket_serveur) {
+
+	socket_client = accept(socket_serveur, NULL, NULL);
+	if(socket_client == -1) {
+		perror("accept");
+	}
+	else {
+		printf("CONNEXION ACCEPTEE\n");
+		fils = fork();
+		if(fils == 0) {				//DEBUT DU FILS
+
+			fclient = fdopen(socket_client, "w+");
+			char * buf = malloc(256);
+
+			while(recois_requete(buf, sizeof(buf)/sizeof(buf[0]), fclient)){
+
+				printf("%s\n", buf);
+				char *url = malloc(256);
+				analyse_ligne1 = analyse_premiere_ligne(buf, url);
+				ignore_entete(fclient);
+				printf("\trésultat analyse première ligne : %d\n", analyse_ligne1);
+				if(analyse_ligne1 == -1) {
+					fprintf(fclient, "HTTP/1.1 400 Bad Request\r\n");
+					fprintf(fclient, "Connection: close\r\n");
+					fprintf(fclient, "Content-Length: 17\r\n");
+					fprintf(fclient, "\r\n");
+					fprintf(fclient, "400 Bad Request\r\n");
+				}
+				else if(strcmp(url, "/") == 0) {
+					fprintf(fclient, "%s", message_bienvenue);
+					printf("HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 8\r\n\r\n200 OK\r\n");
+				}
+				else {
+					printf("NOT FOUND\n");
+					fprintf(fclient, "HTTP/1.1 404 Not Found\r\n");
+					fprintf(fclient, "Connection: close\r\n");
+					fprintf(fclient, "Content-Length: 15\r\n");
+					fprintf(fclient, "\r\n");
+					fprintf(fclient, "404 Not Found\r\n");
+				}
+				exit(0);
+			}
+		}					//FIN DU FILS
+		else {
+			close(socket_client);
+		}
+	}
 }
