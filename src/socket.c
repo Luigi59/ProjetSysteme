@@ -37,7 +37,7 @@ int premier_mot_GET(const char * buf) {
 	return 0;
 }
 
-int trois_mots(const char * buf) {
+int trois_mots(const char * buf, char * url) {
 	int nb_espace = 0;
 	int position_espace1 = 0;
 	int position_espace2;
@@ -55,6 +55,13 @@ int trois_mots(const char * buf) {
 	}
 	if(position_espace2 - position_espace1 < 2)
 		return -1;
+	char tmp[256];
+	for(i = 0; i<256; ++i) 
+		tmp[i] = '\0';
+
+	strncpy(url, &buf[position_espace1+1], position_espace2 - position_espace1 - 1);
+	url = tmp;
+	printf("%s\n", url);
 	return 0;
 }
 
@@ -71,8 +78,8 @@ int troisieme_mot_HTTP(const char * buf) {
 	return 0;
 }
 
-int analyse_premiere_ligne(const char * buf) {
-	if(buf[0] == ' ' || premier_mot_GET(buf)!=0 || trois_mots(buf)!=0 || troisieme_mot_HTTP(buf)!=0)
+int analyse_premiere_ligne(const char * buf, char * url) {
+	if(buf[0] == ' ' || premier_mot_GET(buf)!=0 || trois_mots(buf, url)!=0 || troisieme_mot_HTTP(buf)!=0)
 		return -1;
 	return 0;
 }
@@ -114,7 +121,12 @@ void traitement_signal(int sig){
 	*/
 	if(sig==SIGCHLD)
 		while(waitpid(-1,&statut,WNOHANG)>0)
-			;
+		{
+			if (WIFSIGNALED(statut))
+			{
+				printf("Terminé par sigal %d\n", WTERMSIG(statut));
+			}
+		}
 
 }
 

@@ -16,8 +16,6 @@ int main(int argc, char **argv) {
 	int taille;
 	FILE * fclient;
 	int analyse_ligne1;
-	int ligne1_lue = 0;
-	const char *requete_OK = "\r\nHTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 8\r\n\r\n200 OK\r\n\r\n";
 
 	if(socket_serveur != -1){
 		initialiser_signaux();
@@ -33,33 +31,40 @@ int main(int argc, char **argv) {
 			
 				fils = fork();
 				if(fils == 0) {				//DEBUT DU FILS
-				
-					sleep(1);
-					//write(socket_client, message_bienvenue, strlen(message_bienvenue));
+
 					fclient = fdopen(socket_client, "w+");
 					
 					while(recois_requete(buf, sizeof(buf)/sizeof(buf[0]), fclient)){
-						//printf("message reçu :-D\n");					
-						//envoie_reponse(fclient, buf);
-						analyse_ligne1 = analyse_premiere_ligne(buf);
+
+						char *url = malloc(256);
+						analyse_ligne1 = analyse_premiere_ligne(buf, url);
 						ignore_entete(fclient);
 						printf("\trésultat analyse première ligne : %d\n", analyse_ligne1);
 						if(analyse_ligne1 == -1) {
-							printf("\r\nHTTP/1.1 400 Bad Request\r\n");
-							printf("Connection: close\r\n");
-							printf("Content-Length: 17\r\n");
-							printf("\r\n");
-							printf("400 Bad Request\r\n\r\n");
+							fprintf(fclient, "HTTP/1.1 400 Bad Request\r\n");
+							fprintf(fclient, "Connection: close\r\n");
+							fprintf(fclient, "Content-Length: 17\r\n");
+							fprintf(fclient, "\r\n");
+							fprintf(fclient, "400 Bad Request\r\n");
+						}
+						else if(strcmp(url, "/") == 0) {
+							fprintf(fclient, "%s", message_bienvenue);
+							printf("HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 8\r\n\r\n200 OK\r\n");
 						}
 						else {
-							fprintf(fclient, "%s", message_bienvenue);
-							printf("%s", requete_OK);
+							printf("NOT FOUND\n");
+							fprintf(fclient, "HTTP/1.1 404 Not Found\r\n");
+							fprintf(fclient, "Connection: close\r\n");
+							fprintf(fclient, "Content-Length: 15\r\n");
+							fprintf(fclient, "\r\n");
+							fprintf(fclient, "404 Not Found\r\n");
 						}
-						exit(1);
-						//sleep(1);
-						//printf("			message envoyé\n");
+						exit(0);
 					}
 				}					//FIN DU FILS
+				else {
+					close(socket_client);
+				}
 			}
 			
 		}
