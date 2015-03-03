@@ -9,6 +9,8 @@
 #include <pthread.h>
 #include <signal.h>
 
+#define BUFFER_SIZE 256
+
 const char *message_bienvenue = "\n<kiwi> Bonjour, bienvenue sur notre serveur\n<kiwi> Nous sommes tres heureux de vous recevoir\n<kiwi> J'adore les sucettes, et les gros calins !\n<kiwi> Je suis Charlie\n<kiwi> C'est l'histoire d'un mec qui rentre dans un cafe, et PLOUF !\n<kiwi> Tu connais la blague a deux balles ? PAN PAN !\n<kiwi> J'ai envie de me suicider parce que c'est cool la mort....... ouais c'est trop cool\n<kiwi> Vive les lamasticots !!!\n\n";
 
 int socket_client;
@@ -19,11 +21,11 @@ int analyse_ligne1;
 
 
 void ignore_entete(FILE * fclient) {
-	char * buf = malloc(256);
-	fgets(buf, 256, fclient);
+	char * buf = malloc(BUFFER_SIZE);
+	fgets(buf, BUFFER_SIZE, fclient);
 	while (strncmp(buf, "\r\n", 2) != 0 && strncmp(buf, "\n", 1) != 0) {
 		fflush(stdout); /* on vide le flux */
-        fgets(buf, 256, fclient);
+        fgets(buf, BUFFER_SIZE, fclient);
 	}
 }
 
@@ -51,8 +53,8 @@ int trois_mots(const char * buf, char * url) {
 	}
 	if(position_espace2 - position_espace1 < 2)
 		return -1;
-	char tmp[256];
-	for(i = 0; i<256; ++i) 
+	char tmp[BUFFER_SIZE];
+	for(i = 0; i<BUFFER_SIZE; ++i) 
 		tmp[i] = '\0';
 
 	strncpy(url, &buf[position_espace1+1], position_espace2 - position_espace1 - 1);
@@ -86,7 +88,7 @@ void envoie_reponse(FILE * fclient, const char * phrase) {
 }
 
 /* client ---> serveur */
-char * recois_requete(char * buffer , int size , FILE * stream) {
+char * fgets_or_exit(char * buffer , int size , FILE * stream) {
 
 	/* Réinitialisation du buffer */
 	int i;
@@ -120,7 +122,7 @@ void traitement_signal(int sig){
 		{
 			if (WIFSIGNALED(statut))
 			{
-				printf("Terminé par sigal %d\n", WTERMSIG(statut));
+				printf("Terminé par signal %d\n", WTERMSIG(statut));
 			}
 		}
 
@@ -183,12 +185,11 @@ void accept_client(int socket_serveur) {
 		if(fils == 0) {				//DEBUT DU FILS
 
 			fclient = fdopen(socket_client, "w+");
-			char buf[256];
+			char * buf = malloc(BUFFER_SIZE);
 
-			while(recois_requete(buf, sizeof(buf)/sizeof(buf[0]), fclient)){
+			while(fgets_or_exit(buf, BUFFER_SIZE, fclient)){
 
-				printf("%s\n", buf);
-				char *url = malloc(256);
+				char *url = malloc(BUFFER_SIZE);
 				analyse_ligne1 = analyse_premiere_ligne(buf, url);
 				ignore_entete(fclient);
 				printf("\trésultat analyse première ligne : %d\n", analyse_ligne1);
