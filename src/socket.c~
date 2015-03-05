@@ -11,6 +11,18 @@
 
 #define BUFFER_SIZE 256
 
+enum http_method {
+	HTTP_GET,
+	HTTP_UNSUPPORTED,
+};
+
+typedef struct {
+	enum http_method method;
+	int major_version;
+	int minor_version;
+	char * url;
+} http_request;
+
 const char *message_bienvenue = "\n<kiwi> Bonjour, bienvenue sur notre serveur\n<kiwi> Nous sommes tres heureux de vous recevoir\n<kiwi> J'adore les sucettes, et les gros calins !\n<kiwi> Je suis Charlie\n<kiwi> C'est l'histoire d'un mec qui rentre dans un cafe, et PLOUF !\n<kiwi> Tu connais la blague a deux balles ? PAN PAN !\n<kiwi> J'ai envie de me suicider parce que c'est cool la mort....... ouais c'est trop cool\n<kiwi> Vive les lamasticots !!!\n\n";
 
 int socket_client;
@@ -18,7 +30,6 @@ int fils;
 int taille;
 FILE * fclient;
 int analyse_ligne1;
-
 
 void ignore_entete(FILE * fclient) {
 	char * buf = malloc(BUFFER_SIZE);
@@ -29,13 +40,15 @@ void ignore_entete(FILE * fclient) {
 	}
 }
 
-int premier_mot_GET(const char * buf) {
+int premier_mot_GET(const char * buf, http_request * request) {
+	request->method = HTTP_UNSUPPORTED;	
 	if(strncmp(buf, "GET ", 4) != 0)
 		return -1;
+	request->method = HTTP_GET;
 	return 0;
 }
 
-int trois_mots(const char * buf, char * url) {
+int trois_mots(const char * buf, http_request * request) {
 	int nb_espace = 0;
 	int position_espace1 = 0;
 	int position_espace2;
@@ -57,27 +70,34 @@ int trois_mots(const char * buf, char * url) {
 	for(i = 0; i<BUFFER_SIZE; ++i) 
 		tmp[i] = '\0';
 
-	strncpy(url, &buf[position_espace1+1], position_espace2 - position_espace1 - 1);
-	url = tmp;
-	printf("%s\n", url);
+	strncpy(tmp, &buf[position_espace1+1], position_espace2 - position_espace1 - 1);
+	request->url = tmp;
+	printf("%s\n", request->url);
 	return 0;
 }
 
-int troisieme_mot_HTTP(const char * buf) {
+int troisieme_mot_HTTP(const char * buf, http_request * request) {
 	int i = 0;
 	int nb_espace = 0;
 	while(nb_espace < 2){
-        	if(buf[i] == ' ')
+        if(buf[i] == ' ') {
 			++nb_espace;
+		}
         	++i;
 	}
-	if(strncmp(&buf[i], "HTTP/1.1", 8) != 0 && strncmp(&buf[i], "HTTP/1.0", 8) != 0)
-		return -1;
-	return 0;
+	if(strncmp(&buf[i], "HTTP/1.1", 8) == 0 || strncmp(&buf[i], "HTTP/1.0", 8) == 0) {
+		request->major_version = buf[i+5];
+		request->minor_version = buf[i+7]; /* on obtient 49 <=> 1 en #html (cf. table ascii) */
+		printf("%s\n", buf);
+		printf("major_version : %d\nminor_version : %d\n", request->major_version, request->minor_version);
+		return 0;
+	}
+	printf("major_version : %d\nminor_version : %d\n", request->major_version, request->minor_version);
+	return -1;
 }
 
-int analyse_premiere_ligne(const char * buf, char * url) {
-	if(buf[0] == ' ' || premier_mot_GET(buf)!=0 || trois_mots(buf, url)!=0 || troisieme_mot_HTTP(buf)!=0)
+int analyse_premiere_ligne(const char * buf, http_request * request) {
+	if(premier_mot_GET(buf, request)!=0 || trois_mots(buf, request)!=0 || troisieme_mot_HTTP(buf, request)!=0)
 		return -1;
 	return 0;
 }
@@ -122,7 +142,7 @@ void traitement_signal(int sig){
 		{
 			if (WIFSIGNALED(statut))
 			{
-				printf("Terminé par sigal %d\n", WTERMSIG(statut));
+				printf("Terminé par signal %d\n", WTERMSIG(statut));
 			}
 		}
 
@@ -189,9 +209,11 @@ void accept_client(int socket_serveur) {
 
 			while(fgets_or_exit(buf, BUFFER_SIZE, fclient)){
 
-				char *url = malloc(BUFFER_SIZE);
-				analyse_ligne1 = analyse_premiere_ligne(buf, url);
+				//char *url = malloc(BUFFER_SIZE);
+				http_request request;
+				analyse_ligne1 = analyse_premiere_ligne(buf, &request);
 				ignore_entete(fclient);
+				printf("request.url = %s\n", request.url);
 				printf("\trésultat analyse première ligne : %d\n", analyse_ligne1);
 				if(analyse_ligne1 == -1) {
 					fprintf(fclient, "HTTP/1.1 400 Bad Request\r\n");
@@ -200,7 +222,7 @@ void accept_client(int socket_serveur) {
 					fprintf(fclient, "\r\n");
 					fprintf(fclient, "400 Bad Request\r\n");
 				}
-				else if(strcmp(url, "/") == 0) {
+				else if(strcmp(request.url, "/") == 0) {
 					fprintf(fclient, "%s", message_bienvenue);
 					printf("HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 8\r\n\r\n200 OK\r\n");
 				}
