@@ -31,6 +31,16 @@ int taille;
 FILE * fclient;
 int analyse_ligne1;
 
+void send_status(FILE * client, int code, const char * reason_phrase) {
+	fprintf(client, "HTTP/1.1 %d %s\r\n", code, reason_phrase);
+}
+
+void send_response(FILE * client, int code, const char * reason_phrase, const char * message_body) {
+	send_status(client, code, reason_phrase);
+	fprintf(client, "Content-Length: %zu\r\n\r\n", strlen(message_body));
+	fprintf(client, "%s", message_body);
+}
+
 void ignore_entete(FILE * fclient) {
 	char * buf = malloc(BUFFER_SIZE);
 	fgets(buf, BUFFER_SIZE, fclient);
@@ -215,24 +225,33 @@ void accept_client(int socket_serveur) {
 				ignore_entete(fclient);
 				printf("request.url = %s\n", request.url);
 				printf("\trésultat analyse première ligne : %d\n", analyse_ligne1);
+				fflush(stdout);
 				if(analyse_ligne1 == -1) {
-					fprintf(fclient, "HTTP/1.1 400 Bad Request\r\n");
+					printf("Bad Request\n");
+					send_response(fclient, 400, "Bad Request", "Bad Request\r\n");
+					/*fprintf(fclient, "HTTP/1.1 400 Bad Request\r\n");
 					fprintf(fclient, "Connection: close\r\n");
 					fprintf(fclient, "Content-Length: 17\r\n");
 					fprintf(fclient, "\r\n");
-					fprintf(fclient, "400 Bad Request\r\n");
+					fprintf(fclient, "400 Bad Request\r\n");*/
+				}
+				else if(request.method == HTTP_UNSUPPORTED) {
+					printf("HTTP UNSOPPORTED\n");
+					send_response(fclient, 405, "Method Not Allowed", "Method Not Allowed\r\n");
 				}
 				else if(strcmp(request.url, "/") == 0) {
-					fprintf(fclient, "%s", message_bienvenue);
-					printf("HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 8\r\n\r\n200 OK\r\n");
+					send_response(fclient, 200, "OK", message_bienvenue);
+					/*fprintf(fclient, "%s", message_bienvenue);
+					printf("HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 8\r\n\r\n200 OK\r\n");*/
 				}
 				else {
 					printf("NOT FOUND\n");
-					fprintf(fclient, "HTTP/1.1 404 Not Found\r\n");
+					send_response(fclient, 404, "Not Found", "Not Found\r\n");
+					/*fprintf(fclient, "HTTP/1.1 404 Not Found\r\n");
 					fprintf(fclient, "Connection: close\r\n");
 					fprintf(fclient, "Content-Length: 15\r\n");
 					fprintf(fclient, "\r\n");
-					fprintf(fclient, "404 Not Found\r\n");
+					fprintf(fclient, "404 Not Found\r\n");*/
 				}
 				exit(0);
 			}
