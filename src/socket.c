@@ -66,11 +66,10 @@ int trois_mots(const char * buf, http_request * request) {
 	}
 	if(position_espace2 - position_espace1 < 2)
 		return -1;
-	char tmp[BUFFER_SIZE];
-	for(i = 0; i<BUFFER_SIZE; ++i) 
-		tmp[i] = '\0';
+	char * tmp = malloc(position_espace2 - position_espace1);
 
 	strncpy(tmp, &buf[position_espace1+1], position_espace2 - position_espace1 - 1);
+	tmp[position_espace2 - position_espace1 - 1] = '\0';
 	request->url = tmp;
 	printf("%s\n", request->url);
 	fflush(stdout);
