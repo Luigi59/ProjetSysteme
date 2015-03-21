@@ -1,13 +1,15 @@
+#include <fcntl.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <pthread.h>
+#include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h> 
 #include <sys/socket.h>
-#include <stdlib.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
+#include <sys/stat.h>
 #include <unistd.h>
-#include <pthread.h>
-#include <signal.h>
 
 #define BUFFER_SIZE 256
 
@@ -30,6 +32,54 @@ int fils;
 int taille;
 FILE * fclient;
 int analyse_ligne1;
+
+int copy(int in, int out) {
+	out = dup(in);
+	return out;
+}
+
+int get_file_size(int fd) {
+	struct stat buf;
+	fstat(fd, &buf);
+	return buf.st_size;
+}
+
+int check_and_open(const char *url, const char *document_root) {
+
+	/* url <=> fichier ; document_root  */
+	/* On s'assure que le fichier est un fichier regulier */
+	struct stat tmp_stat;
+	if(stat(document_root, &tmp_stat) == -1) {
+		perror("stat");
+		return -1;
+	}
+	/*if(!S_ISREG(tmp_stat.st_mode)) {
+		return -1;
+	}*/
+	/* On concatene les chaines pour avoir le chemin absolu */
+	char * tmp = malloc(strlen(document_root) + strlen(url));
+	strcpy(tmp, document_root);
+	strcat(tmp, url);
+	/* Ouverture du fichier en lecture seule */
+	printf("document_root : %s\n", document_root);
+	printf("url : %s\n", url);
+	printf("chemin : %s\n", tmp);
+	int res = open(tmp, O_RDONLY);
+	return res;
+}
+
+char *rewrite_url(char *url) {
+	int i = 0;
+    while(url[i] != '\0' && url[i] != '?')
+        ++i;
+
+    char * new_url = malloc(i);
+    strncpy(new_url, url, i);
+	if(strcmp(new_url, "/") == 0) {
+		new_url = "/index.html";
+	}
+    return new_url;
+}
 
 void send_status(FILE * client, int code, const char * reason_phrase) {
 	fprintf(client, "HTTP/1.1 %d %s\r\n", code, reason_phrase);
@@ -202,8 +252,7 @@ int creer_serveur(int port){
 	return config_socket(socket_serveur); 	
 }
 
-
-void accept_client(int socket_serveur) {
+void accept_client(int socket_serveur, const char * dossier) {
 
 	socket_client = accept(socket_serveur, NULL, NULL);
 	if(socket_client == -1) {
@@ -223,36 +272,46 @@ void accept_client(int socket_serveur) {
 				http_request request;
 				analyse_ligne1 = analyse_premiere_ligne(buf, &request);
 				ignore_entete(fclient);
+				request.url = rewrite_url(request.url);
 				printf("request.url = %s\n", request.url);
 				printf("\trésultat analyse première ligne : %d\n", analyse_ligne1);
 				fflush(stdout);
+
 				if(analyse_ligne1 == -1) {
 					printf("Bad Request\n");
 					send_response(fclient, 400, "Bad Request", "Bad Request\r\n");
-					/*fprintf(fclient, "HTTP/1.1 400 Bad Request\r\n");
-					fprintf(fclient, "Connection: close\r\n");
-					fprintf(fclient, "Content-Length: 17\r\n");
-					fprintf(fclient, "\r\n");
-					fprintf(fclient, "400 Bad Request\r\n");*/
 				}
-				else if(request.method == HTTP_UNSUPPORTED) {
-					printf("HTTP UNSOPPORTED\n");
+
+				if(request.method == HTTP_UNSUPPORTED) {
+					printf("HTTP UNSUPPORTED\n");
 					send_response(fclient, 405, "Method Not Allowed", "Method Not Allowed\r\n");
 				}
-				else if(strcmp(request.url, "/") == 0) {
-					send_response(fclient, 200, "OK", message_bienvenue);
-					/*fprintf(fclient, "%s", message_bienvenue);
-					printf("HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 8\r\n\r\n200 OK\r\n");*/
-				}
-				else {
+
+				int fd = check_and_open(request.url, dossier);
+				printf("fd = %d\n", fd);
+				if(fd == -1) {
 					printf("NOT FOUND\n");
 					send_response(fclient, 404, "Not Found", "Not Found\r\n");
-					/*fprintf(fclient, "HTTP/1.1 404 Not Found\r\n");
-					fprintf(fclient, "Connection: close\r\n");
-					fprintf(fclient, "Content-Length: 15\r\n");
-					fprintf(fclient, "\r\n");
-					fprintf(fclient, "404 Not Found\r\n");*/
 				}
+
+				else {
+					//printf("size = %d\n", get_file_size(fd));
+					send_status(fclient, 200, "OK");
+					int fdout = copy(fd, fdout);
+					int size = get_file_size(fdout);
+					fprintf(fclient, "Content-Length: %zu\r\n\r\n", size);
+					char *tmp = malloc(size);
+					read(fdout, tmp, size);
+					fprintf(fclient, "%s", tmp);
+					close(fdout);
+					//send_response(fclient, 200, "OK", message_bienvenue);
+				}
+
+				/*else {
+					printf("NOT FOUND\n");
+					send_response(fclient, 404, "Not Found", "Not Found\r\n");
+				}*/
+				close(fd);
 				exit(0);
 			}
 		}					//FIN DU FILS

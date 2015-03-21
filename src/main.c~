@@ -4,25 +4,52 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdlib.h>
+
 #include "socket.h"
+
+
+int check(const char * dossier){
+    struct stat s;
+    int fd = stat(dossier, &s);
+
+    if(fd == -1 )
+    {
+        perror("No directory found.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (!S_ISDIR(s.st_mode)) 
+    {
+        perror("Error while opening the directory.\n");
+        exit(EXIT_FAILURE);
+    }
+    return 0;
+}
 
 int main(int argc, char **argv) {
 
-	const char *message_bienvenue = "\n<kiwi> Bonjour, bienvenue sur notre serveur\n<kiwi> Nous sommes tres heureux de vous recevoir\n<kiwi> J'adore les sucettes, et les gros calins !\n<kiwi> Je suis Charlie\n<kiwi> C'est l'histoire d'un mec qui rentre dans un cafe, et PLOUF !\n<kiwi> Tu connais la blague a deux balles ? PAN PAN !\n<kiwi> J'ai envie de me suicider parce que c'est cool la mort....... ouais c'est trop cool\n<kiwi> Vive les lamasticots !!!\n\n";
+	const char * site;
+
+	if(argc < 2) {
+		site = "documents/";
+	}
+
+	else {
+		const char * site = argv[1];
+		if(check(site) != 0) {
+			perror("Unknown error.\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+
 	int socket_serveur = creer_serveur(8080);
-	int socket_client;
-	int fils;
-	char * buf = malloc(256);
-	int taille;
-	FILE * fclient;
-	int analyse_ligne1;
 
 	if(socket_serveur != -1){
 		initialiser_signaux();
 		printf("Server started correctly\n");
 		while(1){
 
-			accept_client(socket_serveur);
+			accept_client(socket_serveur, site);
 			
 		}
 
