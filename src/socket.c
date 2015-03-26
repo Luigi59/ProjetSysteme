@@ -25,6 +25,11 @@ typedef struct {
 	char * url;
 } http_request;
 
+typedef struct {
+	const char * extension;
+	const char * mime;
+} extension_to_mime;
+
 const char *message_bienvenue = "\n<kiwi> Bonjour, bienvenue sur notre serveur\n<kiwi> Nous sommes tres heureux de vous recevoir\n<kiwi> J'adore les sucettes, et les gros calins !\n<kiwi> Je suis Charlie\n<kiwi> C'est l'histoire d'un mec qui rentre dans un cafe, et PLOUF !\n<kiwi> Tu connais la blague a deux balles ? PAN PAN !\n<kiwi> J'ai envie de me suicider parce que c'est cool la mort....... ouais c'est trop cool\n<kiwi> Vive les lamasticots !!!\n\n";
 
 int socket_client;
@@ -32,6 +37,62 @@ int fils;
 int taille;
 FILE * fclient;
 int analyse_ligne1;
+
+extension_to_mime supported_mimes[] = {
+	{".jpg", "image/jpeg"},
+	{".jpeg", "image/jpeg"},
+	{".png", "image/png"},
+	{".css", "text/css"},
+	{".html", "text/html"},
+	{NULL, NULL}
+};
+
+char * get_extension(char *url) {
+	return strrchr(url, '.');
+}
+
+const char * get_mime(char *ext) {
+	int i;
+	for(i=0; supported_mimes[i].extension != NULL; ++i) {
+		if(strcmp(ext, supported_mimes[i].extension) == 0) {
+			return supported_mimes[i].mime;
+		}
+	}
+	return "text/plain";
+}
+
+char * analyse_extension(char *url) {
+	int i = 0;
+	int last_point;
+	while(url[i] != '\0') {
+		if(url[i] == '.') {
+			last_point = i;
+		}
+		++i;
+	}
+	char * res = malloc(strlen(url) - last_point);
+	for(i = 0; i<strlen(url) - last_point; ++i) {
+		res[i] = url[last_point + i + 1];
+	}
+	res[i] = '\0';
+	return res;
+}
+
+char * get_content_type(char *url) {
+	char *tmp = analyse_extension(url);
+	char *res;
+	if(strcmp(tmp, "jpg") == 0) {
+		printf("Il y a une image jpg");
+		res = malloc(strlen("image/jpeg\0"));
+		res = "image/jpeg";
+	}
+	else {
+		printf("Il y a du HTML");
+		res = malloc(strlen("text/plain\0"));
+		res = "text/html";
+	}
+	return res;
+}
 
 int copy(int in, int out) {
 	out = dup(in);
@@ -299,6 +360,11 @@ void accept_client(int socket_serveur, const char * dossier) {
 					send_status(fclient, 200, "OK");
 					int fdout = copy(fd, fdout);
 					int size = get_file_size(fdout);
+					//fprintf(fclient, "Content-Type: %s\r\n", get_content_type(request.url));
+					const char * mime = get_mime(get_extension(request.url));
+					printf("mime : %s\n", mime);
+					fprintf(fclient, "Content-Type: %s\r\n", mime);
+					printf("sie : %d\n", size);
 					fprintf(fclient, "Content-Length: %zu\r\n\r\n", size);
 					char *tmp = malloc(size);
 					read(fdout, tmp, size);
